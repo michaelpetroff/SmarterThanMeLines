@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Умнее меня – линии</string>
+    <string name="greetingText">Привет!\n Я помогу тебе \n решить лабиринт </string>
+    <string name="buttonText">Сфотографируй или покажи\n уже сделанную фотографию </string>
+    <string name="pointText">Отметь начало лабиринта</string>
+</resources>
