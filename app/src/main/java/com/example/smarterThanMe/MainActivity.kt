@@ -1,10 +1,8 @@
 package com.example.smarterThanMe
 
 import android.Manifest
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -14,8 +12,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.example.smarterThanMe.databinding.ActivityMainBinding
 import com.theartofdev.edmodo.cropper.CropImage
-import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -27,12 +25,15 @@ class MainActivity : AppCompatActivity() {
     private val callStorage = 3
 
     private lateinit var lastCameraUri: Uri
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
-        cameraButton.setOnClickListener {
+        binding.cameraButton.setOnClickListener {
             val photoFile = createImageFile() ?: return@setOnClickListener
             lastCameraUri = FileProvider.getUriForFile(
                     this, "com.example.smarterThanMe.fileprovider", photoFile)
@@ -50,7 +51,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        galleryButton.setOnClickListener {
+        binding.galleryButton.setOnClickListener {
             val status = ContextCompat.checkSelfPermission(
                     this, Manifest.permission.READ_EXTERNAL_STORAGE)
             if (status == PackageManager.PERMISSION_DENIED) {
@@ -86,9 +87,6 @@ class MainActivity : AppCompatActivity() {
         if (grantResults[0] == PackageManager.PERMISSION_DENIED) return
         if (requestCode == reqStorPerm) {
             try {
-                val photoFile = createImageFile() ?: return
-                val photoURI: Uri = FileProvider.getUriForFile(
-                        this, "com.example.smarterThanMe.fileprovider", photoFile)
                 val galleryIntent = Intent(Intent.ACTION_PICK)
                 galleryIntent.setType("image/*")
                 startActivityForResult(galleryIntent, callStorage)
@@ -106,16 +104,15 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
             return
         }
-        if (data == null) return
-        if (requestCode == callCamera) {
-            CropImage.activity(lastCameraUri).start(this)
-        } else if (requestCode == callStorage) {
-            CropImage.activity(data.data).start(this)
-        } else if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
-            val result = CropImage.getActivityResult(data)
-            val pointIntent = Intent(this, PointSetter::class.java)
-            pointIntent.putExtra("uri", result.uri)
-            startActivity(pointIntent)
+        when (requestCode) {
+            callCamera -> CropImage.activity(lastCameraUri).start(this)
+            callStorage -> if (data != null) CropImage.activity(data.data).start(this)
+            CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE -> {
+                val result = CropImage.getActivityResult(data)
+                val pointIntent = Intent(this, PointSetter::class.java)
+                pointIntent.putExtra("uri", result.uri)
+                startActivity(pointIntent)
+            }
         }
     }
 }
