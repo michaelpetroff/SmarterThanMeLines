@@ -7,7 +7,12 @@ cmake_minimum_required(VERSION 3.10.2)
 
 # Declares and names the project.
 
-project("smarterThanMe")
+set(OpenCV_STATIC ON)
+set(ANDROID_NDK_ABI_NAME ${ANDROID_ABI})
+set(OpenCV_DIR $ENV{OPENCV_ANDROID}/sdk/native/jni)
+find_package(OpenCV REQUIRED)
+
+project("mazesolver")
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -15,13 +20,16 @@ project("smarterThanMe")
 # Gradle automatically packages shared libraries with your APK.
 
 add_library( # Sets the name of the library.
-             native-lib
+        native-lib
 
-             # Sets the library as a shared library.
-             SHARED
-
-             # Provides a relative path to your source file(s).
-             native-lib.cpp )
+        # Sets the library as a shared library.
+        SHARED
+        boundary.cpp
+        line_recognizing.cpp
+        main.cpp
+        maze_solving.cpp
+        # Provides a relative path to your source file(s).
+        native-lib.cpp )
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -30,19 +38,21 @@ add_library( # Sets the name of the library.
 # completing its build.
 
 find_library( # Sets the name of the path variable.
-              log-lib
+        log-lib
 
-              # Specifies the name of the NDK library that
-              # you want CMake to locate.
-              log )
-
+        # Specifies the name of the NDK library that
+        # you want CMake to locate.
+        log )
+find_library(jnigraphics-lib jnigraphics)
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this
 # build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
-                       native-lib
+        native-lib
 
-                       # Links the target library to the log library
-                       # included in the NDK.
-                       ${log-lib} )
+        ${OpenCV_LIBS}
+        ${jnigraphics-lib}
+        # Links the target library to the log library
+        # included in the NDK.
+        ${log-lib})
