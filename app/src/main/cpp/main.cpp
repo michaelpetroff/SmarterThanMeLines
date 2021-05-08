@@ -5,7 +5,6 @@
 #include"line_recognizing.h"
 #include "maze_solving.h"
 #include "maze.h"
-#include<array>
 
 
 cv::Mat solve(cv::Point start, cv::Point end, const cv::Mat& img) {
@@ -44,11 +43,13 @@ cv::Mat solve(cv::Point start, cv::Point end, const cv::Mat& img) {
     }
 
     // Поиск пути от конца линии до конца лабиринта
-    std::vector<cv::Point> trace = GetTrace(maze);
+    std::vector<cv::Point> trace = get_trace(maze);
+
+    std::reverse(trace.begin(), trace.end());
 
     // Отрисовка подсказки на цветном изображении
-    for (int i = 0; i < trace.size() - 1; i++)
-        cv::line(img, trace[i], trace[i + 1], { 255,0,0 ,100}, 2);
+    for (int i = 0; i < std::min(500, (int)trace.size() - 1); i++)
+        cv::line(img, trace[i], trace[i + 1], { 255,0,0 ,100 }, 2);
 
     return img;
 }

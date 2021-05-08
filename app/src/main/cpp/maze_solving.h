@@ -10,4 +10,4 @@
  * @param maze - лабиринт
  * @return массив точек пути
  */
-std::vector<cv::Point> GetTrace(Maze& maze);
+std::vector<cv::Point> get_trace(Maze& maze);

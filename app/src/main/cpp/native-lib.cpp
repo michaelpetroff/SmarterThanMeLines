@@ -1,4 +1,4 @@
-#include <jni.h>
+#include    <jni.h>
 #include <string>
 #include "android/bitmap.h"
 #include "main.h"
@@ -41,7 +41,7 @@ void bitmapToMat(JNIEnv *env, jobject bitmap, cv::Mat& dst, jboolean needUnPremu
     }
 }
 
-// cv::MAt src -> BitMap bitmap
+// cv::Mat src -> BitMap bitmap
 void matToBitmap(JNIEnv* env, cv::Mat src, jobject bitmap, jboolean needPremultiplyAlpha)
 {
     AndroidBitmapInfo  info;

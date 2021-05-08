@@ -97,7 +97,7 @@ std::vector<std::vector<cv::Point2f>> Triangulate(std::vector<cv::Point2f>& pts)
 }
 
 
-std::vector<Segment> alpha_shape(std::vector<cv::Point2f> points, float alpha) {
+std::vector<Segment> alpha_shape(std::vector<cv::Point2f>& points, float alpha) {
     // Набор граней (контур)
     std::unordered_set<Segment,SegmentHash> edges;
 
@@ -148,7 +148,7 @@ std::vector<Segment> alpha_shape(std::vector<cv::Point2f> points, float alpha) {
 }
 
 
-    void get_boundary(Maze& maze) {
+void get_boundary(Maze& maze) {
 
     // Набор точек контуров изображения
     std::vector<std::vector<cv::Point>> cntr;

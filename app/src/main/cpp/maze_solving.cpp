@@ -44,7 +44,7 @@ int get_gap(cv::Vec3b line_color, cv::Mat& clim, cv::Mat& grim) {
 }
 
 
-std::vector<cv::Point> GetTrace(Maze& maze) {
+std::vector<cv::Point> get_trace(Maze& maze) {
     maze.clear_d();
 
     std::vector<cv::Point> result;
