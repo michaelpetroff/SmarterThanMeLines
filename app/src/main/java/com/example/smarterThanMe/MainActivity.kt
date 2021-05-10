@@ -1,39 +1,47 @@
 package com.example.smarterThanMe
 
 import android.Manifest
-import android.content.ActivityNotFoundException
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.example.smarterThanMe.databinding.ActivityMainBinding
 import com.theartofdev.edmodo.cropper.CropImage
-import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+const val MAZE_EXCEPTION = 42
+const val FILE_EXCEPTION = 60
 
 class MainActivity : AppCompatActivity() {
     private val callCamera = 1
     private val reqStorPerm = 2
     private val callStorage = 3
+    private val callSetter = 4
 
     private lateinit var lastCameraUri: Uri
+    private lateinit var binding: ActivityMainBinding
 
+    @SuppressLint("QueryPermissionsNeeded")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
-        cameraButton.setOnClickListener {
-            val photoFile = createImageFile() ?: return@setOnClickListener
+        binding.cameraButton.setOnClickListener {
+            val photoFile = createImageFile(this) ?: return@setOnClickListener
             lastCameraUri = FileProvider.getUriForFile(
                     this, "com.example.smarterThanMe.fileprovider", photoFile)
             try {
@@ -50,7 +58,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        galleryButton.setOnClickListener {
+        binding.galleryButton.setOnClickListener {
             val status = ContextCompat.checkSelfPermission(
                     this, Manifest.permission.READ_EXTERNAL_STORAGE)
             if (status == PackageManager.PERMISSION_DENIED) {
@@ -65,18 +73,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun createImageFile(): File? = try {
-        val timeStamp: String = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(Date())
-        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        val file = File(storageDir, "maze_${timeStamp}.jpg")
-        file.createNewFile()
-        file
-    } catch (e: Exception) {
-        val errorMsg = "Ошибка создания файла"
-        Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
-        null
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -86,9 +82,6 @@ class MainActivity : AppCompatActivity() {
         if (grantResults[0] == PackageManager.PERMISSION_DENIED) return
         if (requestCode == reqStorPerm) {
             try {
-                val photoFile = createImageFile() ?: return
-                val photoURI: Uri = FileProvider.getUriForFile(
-                        this, "com.example.smarterThanMe.fileprovider", photoFile)
                 val galleryIntent = Intent(Intent.ACTION_PICK)
                 galleryIntent.setType("image/*")
                 startActivityForResult(galleryIntent, callStorage)
@@ -102,20 +95,41 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode != RESULT_OK) {
-            val errorMsg = "Упс, что-то сломалось..."
-            Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+            val errorMsg = when (resultCode) {
+                MAZE_EXCEPTION -> "Не удалось распознать лабиринт"
+                FILE_EXCEPTION -> "Ошибка создания файла"
+                RESULT_CANCELED -> ""
+                else -> "Упс, что-то сломалось..."
+            }
+            if (errorMsg.isNotEmpty())
+                Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
             return
         }
-        if (data == null) return
-        if (requestCode == callCamera) {
-            CropImage.activity(lastCameraUri).start(this)
-        } else if (requestCode == callStorage) {
-            CropImage.activity(data.data).start(this)
-        } else if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
-            val result = CropImage.getActivityResult(data)
-            val pointIntent = Intent(this, PointSetter::class.java)
-            pointIntent.putExtra("uri", result.uri)
-            startActivity(pointIntent)
+        when (requestCode) {
+            callCamera -> CropImage.activity(lastCameraUri).start(this)
+            callStorage -> if (data != null) CropImage.activity(data.data).start(this)
+            CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE -> {
+                val result = CropImage.getActivityResult(data)
+                val pointIntent = Intent(this, PointSetter::class.java)
+                pointIntent.putExtra("uri", result.uri)
+                startActivityForResult(pointIntent, callSetter)
+            }
+            callSetter -> {
+                binding.greeting.text = ""
+                if (data != null)
+                    binding.savedImageView.setImageURI(data.getParcelableExtra("uri"))
+            }
         }
     }
+}
+
+@SuppressLint("SimpleDateFormat")
+fun createImageFile(context: Context): File? = try {
+    val timeStamp: String = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(Date())
+    val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    val file = File(storageDir, "maze_${timeStamp}.jpg")
+    file.createNewFile()
+    file
+} catch (e: Exception) {
+    null
 }
