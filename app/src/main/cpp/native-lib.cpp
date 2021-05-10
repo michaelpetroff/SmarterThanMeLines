@@ -96,15 +96,15 @@ void matToBitmap(JNIEnv* env, cv::Mat src, jobject bitmap, jboolean needPremulti
 
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_smarterThanMe_MainActivity_solve(JNIEnv *env, jobject p_this, jobject bitmapIn, jobject bitmapOut,
-        jint x1, jint y1, jint x2, jint y2) {
+Java_com_example_smarterThanMe_PointSetterKt_solve(JNIEnv *env, jclass p_this, jobject bitmapIn, jobject bitmapOut,
+        jfloat x1, jfloat y1, jfloat x2, jfloat y2) {
 
     cv::Mat src;
     // Исходное изображение BitMap -> cv::Mat
     bitmapToMat(env, bitmapIn, src, false);
 
     cv::Mat res;
-    res = solve({x1, y1}, {x2, y2}, src);
+    res = solve(cv::Point(x1, y1), cv::Point(x2, y2), src);
 
     //Перевод cv::Mat -> BitMap
     matToBitmap(env, res, bitmapOut, false);

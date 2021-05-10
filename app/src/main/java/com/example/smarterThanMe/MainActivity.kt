@@ -1,12 +1,15 @@
 package com.example.smarterThanMe
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -18,15 +21,19 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+const val MAZE_EXCEPTION = 42
+const val FILE_EXCEPTION = 60
 
 class MainActivity : AppCompatActivity() {
     private val callCamera = 1
     private val reqStorPerm = 2
     private val callStorage = 3
+    private val callSetter = 4
 
     private lateinit var lastCameraUri: Uri
     private lateinit var binding: ActivityMainBinding
 
+    @SuppressLint("QueryPermissionsNeeded")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -34,7 +41,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(view)
 
         binding.cameraButton.setOnClickListener {
-            val photoFile = createImageFile() ?: return@setOnClickListener
+            val photoFile = createImageFile(this) ?: return@setOnClickListener
             lastCameraUri = FileProvider.getUriForFile(
                     this, "com.example.smarterThanMe.fileprovider", photoFile)
             try {
@@ -66,18 +73,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun createImageFile(): File? = try {
-        val timeStamp: String = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(Date())
-        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        val file = File(storageDir, "maze_${timeStamp}.jpg")
-        file.createNewFile()
-        file
-    } catch (e: Exception) {
-        val errorMsg = "Ошибка создания файла"
-        Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
-        null
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -100,8 +95,14 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode != RESULT_OK) {
-            val errorMsg = "Упс, что-то сломалось..."
-            Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+            val errorMsg = when (resultCode) {
+                MAZE_EXCEPTION -> "Не удалось распознать лабиринт"
+                FILE_EXCEPTION -> "Ошибка создания файла"
+                RESULT_CANCELED -> ""
+                else -> "Упс, что-то сломалось..."
+            }
+            if (errorMsg.isNotEmpty())
+                Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
             return
         }
         when (requestCode) {
@@ -111,8 +112,24 @@ class MainActivity : AppCompatActivity() {
                 val result = CropImage.getActivityResult(data)
                 val pointIntent = Intent(this, PointSetter::class.java)
                 pointIntent.putExtra("uri", result.uri)
-                startActivity(pointIntent)
+                startActivityForResult(pointIntent, callSetter)
+            }
+            callSetter -> {
+                binding.greeting.text = ""
+                if (data != null)
+                    binding.savedImageView.setImageURI(data.getParcelableExtra("uri"))
             }
         }
     }
+}
+
+@SuppressLint("SimpleDateFormat")
+fun createImageFile(context: Context): File? = try {
+    val timeStamp: String = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(Date())
+    val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    val file = File(storageDir, "maze_${timeStamp}.jpg")
+    file.createNewFile()
+    file
+} catch (e: Exception) {
+    null
 }
