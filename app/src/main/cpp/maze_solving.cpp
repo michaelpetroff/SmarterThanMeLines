@@ -9,8 +9,8 @@
  * @return среднее расстояние между стенками лабиринта
  */
 int get_gap(cv::Vec3b line_color, cv::Mat& clim, cv::Mat& grim) {
-    long long cnt = 0;
-    long long sum = 0;
+    long long cnt = 1;
+    long long sum = 1;
 
     int x = 0, y = 0;
     bool fl = false;
@@ -49,6 +49,9 @@ std::vector<cv::Point> get_trace(Maze& maze) {
 
     std::vector<cv::Point> result;
     cv::Vec3d line_color = maze.clim.at<cv::Vec3b>(maze.end_line);
+    if(maze.start_line != maze.start)
+        line_color = maze.line_color;
+
 
     maze.d[maze.end_line.x][maze.end_line.y] = 0;
     std::queue<cv::Point> q;

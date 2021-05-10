@@ -32,5 +32,5 @@ public:
     // и конца линии пользователя
     cv::Point start, end, start_line, end_line;
     // Цвет стен лабиринта и пола
-    cv::Vec3b wall_color, floor_color;
+    cv::Vec3b wall_color, floor_color, line_color;
 };

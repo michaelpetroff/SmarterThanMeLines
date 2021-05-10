@@ -5,7 +5,7 @@
 
 bool comp(cv::Vec3b a, cv::Vec3b b) {
     int black_v_max = 95;
-    int white_s_max = 15;
+    int white_s_max = 25;
     int white_v_min = 240;
 
 
@@ -27,7 +27,7 @@ bool comp(cv::Vec3b a, cv::Vec3b b) {
     else if (v_a < black_v_max && v_b < black_v_max)
         return true;
     else if (!((s_a < white_s_max && v_a > white_v_min) || (s_b < white_s_max && v_b > white_v_min) || (v_a < black_v_max) || (v_b < black_v_max)))
-        return std::min(std::abs(h_a - h_b), 180 - std::abs(h_a - h_b)) < 40;
+        return std::min(std::abs(h_a - h_b), 180 - std::abs(h_a - h_b)) < 20;
     else
         return false;
 }
@@ -158,35 +158,52 @@ void get_end_of_line(Maze& maze) {
     std::queue<cv::Point> q;
     q.push(maze.start_line);
     auto line_col = maze.clim.at<cv::Vec3b>(maze.start_line);
-
+    long long h = line_col[0], s = line_col[1], v = line_col[2], cnt = 1;
     while (!q.empty()) {
         cv::Point p = q.front();
         q.pop();
-        if (p.x == 216 && p.y == 240) {
-            int a = 0;
-        }
+
         if (maze.d[p.x][p.y] > maze.d[x_max][y_max]) {
             x_max = p.x;
             y_max = p.y;
         }
         auto cur_col = [&maze](int x, int y) {return maze.clim.at<cv::Vec3b>({ x,y }); };
         if (p.x - 1 >= 0 && maze.d[p.x - 1][p.y] == -1 && comp(cur_col(p.x - 1, p.y), line_col)) {
+            cnt++;
+            h += cur_col(p.x - 1, p.y)[0];
+            s += cur_col(p.x - 1, p.y)[1];
+            v += cur_col(p.x - 1, p.y)[2];
             q.push({ p.x - 1, p.y });
             maze.d[p.x - 1][p.y] = maze.d[p.x][p.y] + 1;
         }
         if (p.y - 1 >= 0 && maze.d[p.x][p.y - 1] == -1 && comp(cur_col(p.x, p.y - 1), line_col)) {
+            cnt++;
+            h += cur_col(p.x, p.y - 1)[0];
+            s += cur_col(p.x, p.y - 1)[1];
+            v += cur_col(p.x, p.y - 1)[2];
             q.push({ p.x, p.y - 1 });
             maze.d[p.x][p.y - 1] = maze.d[p.x][p.y] + 1;
         }
         if (p.x + 1 < maze.clim.cols && maze.d[p.x + 1][p.y] == -1 && comp(cur_col(p.x + 1, p.y), line_col)) {
+            cnt++;
+            h += cur_col(p.x + 1, p.y)[0];
+            s += cur_col(p.x + 1, p.y)[1];
+            v += cur_col(p.x + 1, p.y)[2];
             q.push({ p.x + 1, p.y });
             maze.d[p.x + 1][p.y] = maze.d[p.x][p.y] + 1;
         }
         if (p.y + 1 < maze.clim.rows && maze.d[p.x][p.y + 1] == -1 && comp(cur_col(p.x, p.y + 1), line_col)) {
+            cnt++;
+            h += cur_col(p.x, p.y+1)[0];
+            s += cur_col(p.x, p.y+1)[1];
+            v += cur_col(p.x, p.y+1)[2];
             q.push({ p.x, p.y + 1 });
             maze.d[p.x][p.y + 1] = maze.d[p.x][p.y] + 1;
         }
     }
+    maze.line_color[0] = h / cnt;
+    maze.line_color[1] = s / cnt;
+    maze.line_color[2] = v / cnt;
     maze.end_line = {x_max, y_max};
 }
 
