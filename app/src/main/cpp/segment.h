@@ -15,13 +15,11 @@ struct Segment {
 struct SegmentHash {
     std::hash<int> int_hash;
     std::size_t operator()(const Segment& seg) const {
-        std::size_t lhs = int_hash(seg.source.x);
-        std::size_t rhs = int_hash(seg.source.y);
-        lhs ^= rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2);
-        rhs = int_hash(seg.destination.x);
-        lhs ^= rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2);
-        rhs = int_hash(seg.destination.y);
-        lhs ^= rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2);
-        return lhs;
+            std::size_t seed = 0;
+            seed ^= int_hash(seg.source.x) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= int_hash(seg.source.y) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= int_hash(seg.destination.x) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= int_hash(seg.destination.y) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            return seed;
     }
 };
