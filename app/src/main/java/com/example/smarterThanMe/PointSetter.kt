@@ -29,6 +29,7 @@ class PointSetter : AppCompatActivity() {
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
+        System.loadLibrary("native-lib")
         super.onCreate(savedInstanceState)
         binding = ActivityPointSetterBinding.inflate(layoutInflater)
         val view = binding.root
@@ -43,6 +44,7 @@ class PointSetter : AppCompatActivity() {
         var pickedFinishY = 0F
 
         val myBitmap = (binding.imageView.drawable as BitmapDrawable).bitmap
+        val img = myBitmap.copy(myBitmap.config,true);
         val tmpBitmap = Bitmap.createBitmap(
                 myBitmap.width, myBitmap.height, Bitmap.Config.RGB_565)
         val drawColor = ResourcesCompat.getColor(resources, R.color.green_700, null)
@@ -81,7 +83,7 @@ class PointSetter : AppCompatActivity() {
                 binding.doneButton.visibility = View.GONE
             }
             if (state == State.PICKED_FINISH) {
-                val input = (binding.imageView.drawable as BitmapDrawable).bitmap
+                val input = img
                 val output = createBitmap(input.width, input.height, Bitmap.Config.ARGB_8888)
                 val intent = Intent()
                 try {

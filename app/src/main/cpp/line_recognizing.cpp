@@ -6,7 +6,7 @@
 bool comp(cv::Vec3b a, cv::Vec3b b) {
     int black_v_max = 95;
     int white_s_max = 25;
-    int white_v_min = 240;
+    int white_v_min = 180;
 
 
     int h_a, s_a, v_a, h_b, s_b, v_b;
@@ -19,7 +19,7 @@ bool comp(cv::Vec3b a, cv::Vec3b b) {
     v_b = b[2];
 
     if (s_a < white_s_max && s_b < white_s_max)
-        return abs(v_a - v_b) < 30;
+        return abs(v_a - v_b) < 60;
 
 
     if (s_a < white_s_max && v_a > white_v_min && s_b < white_s_max && v_b > white_v_min)

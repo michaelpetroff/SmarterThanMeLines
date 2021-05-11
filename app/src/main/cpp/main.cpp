@@ -42,6 +42,7 @@ cv::Mat solve(cv::Point start, cv::Point end, const cv::Mat& img) {
         cv::line(maze.grim, c.source, c.destination, {0, 255, 0 }, 3);
     }
 
+
     // Поиск пути от конца линии до конца лабиринта
     std::vector<cv::Point> trace = get_trace(maze);
 
