@@ -121,7 +121,7 @@ std::vector<cv::Point> get_trace(Maze& maze) {
     // Восстанавливаем путь с конца
     cv::Point cur = maze.end;
     if (maze.d[cur.x][cur.y] == -1)
-        throw std::runtime_error("");
+        throw std::exception();
     int dir = -1;
 
     // Функции проверки хода влево,вправо,вниз,вверх

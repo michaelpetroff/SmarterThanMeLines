@@ -103,9 +103,17 @@ Java_com_example_smarterThanMe_PointSetterKt_solve(JNIEnv *env, jclass p_this, j
     // Исходное изображение BitMap -> cv::Mat
     bitmapToMat(env, bitmapIn, src, false);
 
-    cv::Mat res;
-    res = solve(cv::Point(x1, y1), cv::Point(x2, y2), src);
 
+
+
+    cv::Mat res;
+    try {
+        res = solve(cv::Point(x1, y1), cv::Point(x2, y2), src);
+    } catch (std::exception e) {
+        jclass jc = env->FindClass("java/lang/Error");
+        if(jc) env->ThrowNew(jc, e.what());
+        return;
+    }
     //Перевод cv::Mat -> BitMap
     matToBitmap(env, res, bitmapOut, false);
 }
