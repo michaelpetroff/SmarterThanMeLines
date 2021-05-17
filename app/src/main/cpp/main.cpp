@@ -18,7 +18,7 @@ cv::Mat solve(cv::Point start, cv::Point end, const cv::Mat& img) {
 
     // Изображение в цветовой моделе - HSV
     cv::Mat img_hsv;
-    cvtColor(img, img_hsv, cv::COLOR_BGR2HSV);
+    cvtColor(img, img_hsv, cv::COLOR_RGB2HSV);
 
     Maze maze(img_hsv, gray_img, start, end);
 
@@ -44,7 +44,13 @@ cv::Mat solve(cv::Point start, cv::Point end, const cv::Mat& img) {
 
 
     // Поиск пути от конца линии до конца лабиринта
-    std::vector<cv::Point> trace = get_trace(maze);
+    std::vector<cv::Point> trace;
+    try {
+        trace = get_trace(maze, true);
+    }
+    catch (std::exception& exception) {
+        trace = get_trace(maze, false);
+    }
 
     std::reverse(trace.begin(), trace.end());
 

@@ -109,7 +109,7 @@ Java_com_example_smarterThanMe_PointSetterKt_solve(JNIEnv *env, jclass p_this, j
     cv::Mat res;
     try {
         res = solve(cv::Point(x1, y1), cv::Point(x2, y2), src);
-    } catch (std::exception e) {
+    } catch (std::exception& e) {
         jclass jc = env->FindClass("java/lang/Error");
         if(jc) env->ThrowNew(jc, e.what());
         return;

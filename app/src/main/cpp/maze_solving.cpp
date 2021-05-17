@@ -8,7 +8,7 @@
  * @param grim - черно-белое изображение лабиринта
  * @return среднее расстояние между стенками лабиринта
  */
-int get_gap(cv::Vec3b line_color, cv::Mat& clim, cv::Mat& grim) {
+int get_gap(const cv::Vec3b& line_color, cv::Mat& clim, cv::Mat& grim) {
     long long cnt = 1;
     long long sum = 1;
 
@@ -44,12 +44,12 @@ int get_gap(cv::Vec3b line_color, cv::Mat& clim, cv::Mat& grim) {
 }
 
 
-std::vector<cv::Point> get_trace(Maze& maze) {
+std::vector<cv::Point> get_trace(Maze& maze, bool with_gap) {
     maze.clear_d();
 
     std::vector<cv::Point> result;
     cv::Vec3d line_color = maze.clim.at<cv::Vec3b>(maze.end_line);
-    if(maze.start_line != maze.start)
+    if(maze.start_line != maze.end_line)
         line_color = maze.line_color;
 
 
@@ -61,7 +61,15 @@ std::vector<cv::Point> get_trace(Maze& maze) {
     auto cur_col = [&maze](int x, int y) {return maze.clim.at<cv::Vec3b>({ x,y }); };
 
     // Находим отступ
-    int gap = std::max(get_gap(line_color, maze.clim, maze.grim) / 6, 2);
+    int gap = 1;
+    if(with_gap) {
+        gap = std::max(get_gap(line_color, maze.clim, maze.grim) / 6, 2);
+        cv::Mat clim_tmp, grim_tmp;
+        cv::rotate(maze.clim, clim_tmp, cv::ROTATE_90_CLOCKWISE);
+        cv::rotate(maze.grim, grim_tmp, cv::ROTATE_90_CLOCKWISE);
+        int tmp = std::max(get_gap(line_color, clim_tmp, grim_tmp) / 6, 2);
+        gap = (gap + tmp) / 2;
+    }
 
     // bfs
     while (!q.empty()) {
