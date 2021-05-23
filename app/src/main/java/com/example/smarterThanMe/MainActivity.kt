@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -21,12 +20,12 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-const val MAZE_EXCEPTION = 42
-const val FILE_EXCEPTION = 60
+const val RESULT_EXCEPTION = 42
+const val RESULT_FILE_EXCEPTION = 60
 
 class MainActivity : AppCompatActivity() {
     private val callCamera = 1
-    private val reqStorPerm = 2
+    private val reqPerm = 2
     private val callStorage = 3
     private val callSetter = 4
 
@@ -40,6 +39,13 @@ class MainActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
+        val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val lastResult = File(storageDir, "lastResult")
+        if (storageDir != null && lastResult.exists() && lastResult.length() > 0) {
+            binding.greeting.text = ""
+            binding.savedImageView.setImageURI(Uri.fromFile(lastResult))
+        }
+
         binding.cameraButton.setOnClickListener {
             val photoFile = createImageFile(this) ?: return@setOnClickListener
             lastCameraUri = FileProvider.getUriForFile(
@@ -47,14 +53,12 @@ class MainActivity : AppCompatActivity() {
             try {
                 val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
                 if (cameraIntent.resolveActivity(packageManager) == null) {
-                    val errorMsg = "Ошибка камеры"
-                    Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+                    onActivityResult(callCamera, RESULT_EXCEPTION, null)
                 }
                 cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, lastCameraUri)
                 startActivityForResult(cameraIntent, callCamera)
             } catch (e: Exception) {
-                val errorMsg = "Ошибка камеры"
-                Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+                onActivityResult(callCamera, RESULT_EXCEPTION, null)
             }
         }
 
@@ -65,9 +69,9 @@ class MainActivity : AppCompatActivity() {
                 ActivityCompat.requestPermissions(
                         this,
                         arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                        reqStorPerm)
+                        reqPerm)
             } else onRequestPermissionsResult(
-                    reqStorPerm,
+                    reqPerm,
                     arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
                     intArrayOf(PackageManager.PERMISSION_GRANTED))
         }
@@ -80,14 +84,13 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (grantResults[0] == PackageManager.PERMISSION_DENIED) return
-        if (requestCode == reqStorPerm) {
+        if (requestCode == reqPerm) {
             try {
                 val galleryIntent = Intent(Intent.ACTION_PICK)
                 galleryIntent.setType("image/*")
                 startActivityForResult(galleryIntent, callStorage)
             } catch (e: Exception) {
-                val errorMsg = "Ошибка галереи"
-                Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+                onActivityResult(callStorage, RESULT_EXCEPTION, null)
             }
         }
     }
@@ -96,9 +99,14 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode != RESULT_OK) {
             val errorMsg = when (resultCode) {
-                MAZE_EXCEPTION -> "Не удалось распознать лабиринт"
-                FILE_EXCEPTION -> "Ошибка создания файла"
                 RESULT_CANCELED -> ""
+                RESULT_EXCEPTION -> when (requestCode) {
+                    callSetter -> "Не удалось распознать лабиринт"
+                    callCamera -> "Ошибка камеры"
+                    callStorage -> "Ошибка галереи"
+                    else -> "Упс, что-то сломалось..."
+                }
+                RESULT_FILE_EXCEPTION -> "Ошибка создания файла"
                 else -> "Упс, что-то сломалось..."
             }
             if (errorMsg.isNotEmpty())
@@ -114,10 +122,9 @@ class MainActivity : AppCompatActivity() {
                 pointIntent.putExtra("uri", result.uri)
                 startActivityForResult(pointIntent, callSetter)
             }
-            callSetter -> {
+            callSetter -> if (data != null) {
                 binding.greeting.text = ""
-                if (data != null)
-                    binding.savedImageView.setImageURI(data.getParcelableExtra("uri"))
+                binding.savedImageView.setImageURI(data.getParcelableExtra("uri"))
             }
         }
     }

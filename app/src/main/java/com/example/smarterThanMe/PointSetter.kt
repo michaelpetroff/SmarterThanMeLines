@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -44,9 +45,8 @@ class PointSetter : AppCompatActivity() {
         var pickedFinishY = 0F
 
         val myBitmap = (binding.imageView.drawable as BitmapDrawable).bitmap
-        val img = myBitmap.copy(myBitmap.config,true);
         val tmpBitmap = Bitmap.createBitmap(
-                myBitmap.width, myBitmap.height, Bitmap.Config.RGB_565)
+                myBitmap.width, myBitmap.height, Bitmap.Config.ARGB_8888)
         val drawColor = ResourcesCompat.getColor(resources, R.color.green_700, null)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = drawColor
@@ -56,18 +56,18 @@ class PointSetter : AppCompatActivity() {
         binding.imageView.setOnTouchListener { v, event ->
             val x = event.x * myBitmap.width / v.measuredWidth
             val y = event.y * myBitmap.height / v.measuredHeight
-            Log.d("params", "$x, $y, ${v.layoutParams.width}, ${v.layoutParams.height}")
             val tmpCanvas = Canvas(tmpBitmap)
             tmpCanvas.drawBitmap(myBitmap, 0F, 0F, null)
-            tmpCanvas.drawCircle(x, y, 5F * resources.displayMetrics.density, paint)
+            val circleSize = 10F * minOf(
+                    myBitmap.width / v.measuredWidth, myBitmap.height / v.measuredHeight)
+            tmpCanvas.drawCircle(x, y, circleSize, paint)
             binding.imageView.setImageBitmap(tmpBitmap)
             if (state == State.PICKING_START || state == State.PICKED_START) {
                 state = State.PICKED_START
                 pickedStartX = x
                 pickedStartY = y
             } else {
-                tmpCanvas.drawCircle(
-                        pickedStartX, pickedStartY, 5F * resources.displayMetrics.density, paint)
+                tmpCanvas.drawCircle(pickedStartX, pickedStartY, circleSize, paint)
                 state = State.PICKED_FINISH
                 pickedFinishX = x
                 pickedFinishY = y
@@ -83,23 +83,24 @@ class PointSetter : AppCompatActivity() {
                 binding.doneButton.visibility = View.GONE
             }
             if (state == State.PICKED_FINISH) {
-                val input = img
-                val output = createBitmap(input.width, input.height, Bitmap.Config.ARGB_8888)
+                val output = createBitmap(myBitmap.width, myBitmap.height, Bitmap.Config.ARGB_8888)
                 val intent = Intent()
                 try {
-                    solve(input, output, pickedStartX, pickedStartY, pickedFinishX, pickedFinishY)
+                    solve(myBitmap, output, pickedStartX, pickedStartY, pickedFinishX, pickedFinishY)
                 } catch (e: Throwable) {
-                    setResult(MAZE_EXCEPTION, intent)
+                    setResult(RESULT_EXCEPTION, intent)
                     finish()
                 }
                 val resultFile: File? = createImageFile(this)
                 if (resultFile == null) {
-                    setResult(FILE_EXCEPTION, intent)
+                    setResult(RESULT_FILE_EXCEPTION, intent)
                     finish()
                 }
                 val stream = FileOutputStream(resultFile)
                 output.compress(Bitmap.CompressFormat.JPEG, 100, stream)
                 intent.putExtra("uri", Uri.fromFile(resultFile))
+                val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+                resultFile!!.copyTo(File(storageDir, "lastResult"), overwrite = true)
                 setResult(RESULT_OK, intent)
                 finish()
             }
